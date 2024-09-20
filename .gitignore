@@ -124,3 +124,6 @@ venv.bak/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# extra files
+instructions.md
