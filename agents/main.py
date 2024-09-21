@@ -1,7 +1,7 @@
 import asyncio
-import logging
 from agent import Reddtriever
 from search import SearchTool
+from utils import log_interaction 
 
 async def main():
     reddtriever = Reddtriever()
@@ -15,10 +15,11 @@ async def main():
         if query.lower() == 'quit':
             break
 
-        response = await reddtriever.generate(query)
+        response, docs_retrieved, rephrased_query = await reddtriever.generate(query)
+        print("="*100)
         print(response)
 
+        await log_interaction(query, docs_retrieved, response, rephrased_query)
 
 if __name__ == "__main__":
-    asyncio.run(main())
     asyncio.run(main())

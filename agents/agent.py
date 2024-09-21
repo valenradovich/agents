@@ -67,7 +67,6 @@ class Reddtriever:
             Anything between the `context` is retrieved from Reddit and is not a part of the conversation with the user. Today's date is {datetime.now().isoformat()}
             """
 
-
         response = await self.gpt_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -82,24 +81,22 @@ class Reddtriever:
         if rephrased_query:
             search_results = await self.search_tool.search(rephrased_query)
             if isinstance(search_results, list) and len(search_results) == 1 and isinstance(search_results[0], str) and search_results[0].startswith("Error performing search"):
-                return "I'm sorry, but I encountered an error while searching for information. Could you please try again or rephrase your question?"
+                return "I'm sorry, but I encountered an error while searching for information. Could you please try again or rephrase your question?", [], rephrased_query
             
-            # Convert search results to a comprehensive string format
             context = []
             for i, result in enumerate(search_results, 1):
                 context.append(f"{i}. Content: {result.get('pageContent', 'N/A')}")
-                context.append(f"   URL: {result.get('url', 'N/A')}")
-                context.append(f"   Title: {result.get('title', 'N/A')}")
-                # Add any other fields you want to include
-                context.append("")  # Add a blank line between results
+                context.append(f"   URL: {result.get('metadata', {}).get('url', 'N/A')}")
+                context.append(f"   Title: {result.get('metadata', {}).get('title', 'N/A')}")
+                context.append("")  
             
             context_str = "\n".join(context)
             
             response = await self.generate_response(context_str)
             self.update_chat_history(query, response)
-            return response
+            return response, search_results, rephrased_query
         else:
-            return "I'm sorry, but I couldn't process your request. Could you please rephrase your question or ask something else?"
+            return "I'm sorry, but I couldn't process your request. Could you please rephrase your question or ask something else?", [], None
 
     def update_chat_history(self, query, response):
         self.chat_history.append({"role": "user", "content": query})

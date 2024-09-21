@@ -1,4 +1,3 @@
-import logging
 from tavily import AsyncTavilyClient
 from config import TAVILY_API_KEY
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -10,16 +9,13 @@ class SearchTool:
         self.vectorizer = TfidfVectorizer()
         
     async def initialize(self):
-        # Any initialization that needs to be done asynchronously
         pass
 
     async def search(self, query: str) -> list:
         try:
             response = await self.client.search(query=query, include_domains=["reddit.com"])
             documents = self._transform_response(response)
-            for doc in documents:
-                print(f"doc: {doc['pageContent']}")
-            #return self.re_rank(query, documents)
+            # return self.re_rank(query, documents) -> not used for now, just adds inference time
             return documents
         except Exception as e:
             return [f"Error performing search: {str(e)}"]
@@ -39,19 +35,18 @@ class SearchTool:
         return documents
 
     def re_rank(self, query: str, documents: list) -> list:
-        '''not used for now'''
+        '''not used for now, just adds inference time'''
         if not documents:
             return []
 
         texts = [doc['pageContent'] for doc in documents]
-        for text in texts:
-            print(f"text: {text}")
-        print(f"query: {query}")
+        
         self.vectorizer.fit(texts)
         doc_vectors = self.vectorizer.transform(texts)
         query_vector = self.vectorizer.transform([query])
 
-        cosine_similarities = cosine_similarity(query_vector, doc_vectors).flatten()
+        # not working at all, vectors are too long for this kind of comparison. should use something else 
+        cosine_similarities = cosine_similarity(query_vector, doc_vectors).flatten() 
 
         similarity_threshold = 0.5
         filtered_documents = [
