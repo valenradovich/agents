@@ -4,7 +4,8 @@ import asyncio
 from datetime import datetime
 
 async def log_interaction(user_prompt, docs_retrieved, llm_answer, rephrased_query):
-    log_folder = "logs"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    log_folder = os.path.join(current_dir, "logs")
     os.makedirs(log_folder, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
