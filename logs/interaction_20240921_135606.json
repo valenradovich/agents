@@ -1,0 +1,48 @@
+{
+  "timestamp": "2024-09-21T13:56:06.477205",
+  "user_prompt": "what's the best book for engineers",
+  "rephrased_query": "What is the best book for engineers?",
+  "docs_retrieved": [
+    {
+      "pageContent": "The Art and Doing Science of Engineering, by Richard Hamming (the dude who invented the Hamming Codes...oh, and he helped program the computers for the Manhattan Project in 1945). It's a fantastic book about engineering, how it's evolved, how you can think of it like an art to solve interesting problems creatively.",
+      "metadata": {
+        "title": "What are some books that every engineer should read?",
+        "url": "https://www.reddit.com/r/engineering/comments/4vjr0a/what_are_some_books_that_every_engineer_should/",
+        "img_src": null
+      }
+    },
+    {
+      "pageContent": "The old books are still very valuable, but since you know them, here's a list of books released quite recently (10 years top): Modern Software Engineering, Dave Farlay. Software Engineering at Google, Lessons Learned from Programming Over Time, Titus Winters (also available for free in html format) The DevOps Handbook. The Phoenix Project.",
+      "metadata": {
+        "title": "Looking for modern books on software engineering",
+        "url": "https://www.reddit.com/r/softwaredevelopment/comments/14bsl0b/looking_for_modern_books_on_software_engineering/",
+        "img_src": null
+      }
+    },
+    {
+      "pageContent": "Examines the history of precision and accuracy in engineering and manufacturing. By all means it should be a pretty dry read but it's actually really poetic in a way. Winchester writes each section of the book as a precision and it gets more and more advanced as the book continues.",
+      "metadata": {
+        "title": "What are some good books you think every mechanical engineer ... - Reddit",
+        "url": "https://www.reddit.com/r/MechanicalEngineering/comments/12rd6x8/what_are_some_good_books_you_think_every/",
+        "img_src": null
+      }
+    },
+    {
+      "pageContent": "Shigley's Mechanical Eng Design - For if you ever intend to design mechanical parts and assemblies. It goes along with Machinery's Handbook. For summary databooks, check out Engineers' Practical Databook.I tried the IMechE (Clifford Mathews) one but sadly it was a waste of money, as more than 50% was written waffle geared towards undergraduates and fresh graduates.",
+      "metadata": {
+        "title": "Mechanical design engineers - Which books would you recommend?",
+        "url": "https://www.reddit.com/r/MechanicalEngineering/comments/k8wze1/mechanical_design_engineers_which_books_would_you/",
+        "img_src": null
+      }
+    },
+    {
+      "pageContent": "Ignition, John D. Clark (humorous book about the history of rocket fuels) . QED, Richard Feynman (An absolutely amazing book boiling the core elements of QED down to examples and diagrams that a non-theoretical physicist can understand) . Engineering infinity (a collection of sci-fi short stories that question the direction of different scientific advancements.)",
+      "metadata": {
+        "title": "What are the best books for Mechanical Engineering : r ... - Reddit",
+        "url": "https://www.reddit.com/r/MechanicalEngineering/comments/95bcsm/what_are_the_best_books_for_mechanical_engineering/",
+        "img_src": null
+      }
+    }
+  ],
+  "llm_answer": "If you're looking for notable books in the field of engineering, several recommendations stand out across various branches of engineering disciplines. Here’s a compiled list of influential titles:\n\n### General Engineering\n- **\"The Art and Doing Science of Engineering\" by Richard Hamming**: This book offers insights into the evolution of engineering and emphasizes creative problem-solving, likening engineering to an art form. Hamming is well-known for his contributions to computer science and engineering, making this book a valuable read for any engineer [1].\n\n### Software Engineering\n- **\"Modern Software Engineering\" by Dave Farley**: This book provides contemporary approaches and methodologies essential for software engineering.\n- **\"Software Engineering at Google: Lessons Learned from Programming Over Time\" by Titus Winters**: This is a practical guide that shares experiences and lessons learned from programming at Google. It is also available for free online.\n- **\"The DevOps Handbook\" and \"The Phoenix Project\"**: These titles focus on the integration of software development and IT operations, providing frameworks for effective collaboration [2].\n\n### Mechanical Engineering\n- **\"Shigley's Mechanical Engineering Design\"**: This is a critical resource for anyone involved in designing mechanical parts and assemblies. It is often paired with **Machinery's Handbook** for comprehensive understanding.\n- **\"Engineers' Practical Databook\"**: Provides practical data necessary for engineers, although specific recommendations may vary based on personal experiences — some find other databooks less useful [4].\n- **\"Ignition\" by John D. Clark**: This humorous book covers the history of rocket fuels and offers an engaging perspective on a niche aspect of mechanical engineering.\n- **\"QED\" by Richard Feynman**: It breaks down quantum electrodynamics into understandable terms for non-specialists, making complex science accessible [5].\n\n### Other Notable Mentions\n- **\"Engineering Infinity\"**: A collection of sci-fi short stories that explore philosophical questions about the direction of scientific advancements, which may inspire engineers to think beyond conventional boundaries [5].\n\nThese titles reflect a blend of foundational theory, practical advice, and innovative thinking, making them essential reads for both aspiring and established engineers across disciplines. Whether you are looking to enhance your technical skills or gain insights into the creativity inherent in engineering, these books provide a well-rounded foundation for further exploration."
+}
