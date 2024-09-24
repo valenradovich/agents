@@ -127,3 +127,8 @@ Thumbs.db
 
 # extra files
 instructions.md
+
+# files inside logs folder, inside reason-act folder and reddtriever folder
+logs/
+reason-act/logs/
+redtriever/logs/
