@@ -51,8 +51,8 @@ class PlayMusic(Tool):
     def __init__(self):
         super().__init__(
             name="play_music",
-            args=["spotify_query"],
-            description="Search and play a song on Spotify. Input should be a song name followed by the artist."
+            args=["spotify_query", "type_of_item"],
+            description="Search and play a song on Spotify. Input query should be a song name followed by the artist. Type of item should be 'track', 'album' or 'playlist'."
         )
         self.sp = self._setup_spotify()
 
@@ -65,8 +65,9 @@ class PlayMusic(Tool):
             redirect_uri="http://localhost:8888/callback"
         ))
 
-    def __call__(self, query: str) -> str:
-        return self.search_and_play(query, "track")
+    def __call__(self, input: str) -> str:
+        query, type = [item.strip() for item in input.split(',')]
+        return self.search_and_play(query, type)
 
     def search_and_play(self, query, type, retry=False):
         print(Fore.WHITE + f"\nSearching for {type}: {query}")

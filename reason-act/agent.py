@@ -46,6 +46,9 @@ class ReActAgent:
                 # Generate context from the sliding window
                 context = self.get_system_prompt() + "\n" + "\n".join([f"{item['role'].capitalize()}: {item['content']}" for item in self.context_window])
                 
+                # print the system prompt
+                #print(Fore.MAGENTA + f"\n{self.get_system_prompt()}")
+                
                 # Reasoning step
                 thought = self._generate_thought(context)
                 #self.thought_history.append(thought)
@@ -53,7 +56,6 @@ class ReActAgent:
                 
                 #self.metrics["total_thoughts"] += 1
 
-                # Check if we've reached a conclusion
                 if "Final Answer:" in thought:
                     final_answer = self._extract_final_answer(thought)
                     self.context_window.append({"role": "assistant", "content": final_answer})
@@ -101,18 +103,24 @@ class ReActAgent:
         return response.choices[0].message.content.strip()
 
     def _parse_action(self, thought: str) -> Tuple[Optional[str], Optional[str]]:
-        action_match = re.search(r"Action:\s*(\w+)", thought)
-        input_match = re.search(r"Action:\s*\w+\s*:\s*(.*)", thought)
+        action_match = re.search(r"Action:\s*(\w+)\((.*?)\)", thought)
         
         if action_match:
             action = action_match.group(1)
-            action_input = input_match.group(1) if input_match else ""
+            action_input = action_match.group(2)
             
-            # Validate action
             if action not in self.tools:
                 return None, f"Invalid action '{action}'. Available actions are: {', '.join(self.tools.keys())}"
             
-            return action, action_input.strip()
+            # Remove quotes and split inputs if there are multiple
+            inputs = [inp.strip().strip("'\"") for inp in action_input.split(',')]
+            
+            if len(inputs) == 1:
+                return action, inputs[0]
+            elif len(inputs) == 2:
+                return action, ', '.join(inputs)  # Join back with comma for two-argument actions
+            else:
+                return None, f"Invalid number of arguments for action '{action}'. Expected 1 or 2, got {len(inputs)}."
         else:
             return None, "No valid action found in the thought."
 
@@ -120,7 +128,7 @@ class ReActAgent:
         return thought.split("Final Answer:")[-1].strip()
 
     def get_system_prompt(self) -> str:
-        tool_descriptions = "\n".join([f"- {tool['name']}: {tool['description']}" for tool in self.tool_info])
+        tool_descriptions = "\n".join([f"- {tool['name']}({', '.join(tool['args'])}): {tool['description']}" for tool in self.tool_info])
         return f"""
 You run in a loop of Thought, Action, PAUSE, Observation.
 At the end of the loop you output a Final Answer
