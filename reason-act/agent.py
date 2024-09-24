@@ -48,10 +48,10 @@ class ReActAgent:
                 
                 # Reasoning step
                 thought = self._generate_thought(context)
-                self.thought_history.append(thought)
+                #self.thought_history.append(thought)
                 self.context_window.append({"role": "assistant", "content": thought})
                 
-                self.metrics["total_thoughts"] += 1
+                #self.metrics["total_thoughts"] += 1
 
                 # Check if we've reached a conclusion
                 if "Final Answer:" in thought:
@@ -72,7 +72,7 @@ class ReActAgent:
                     continue  # Invalid action, generate a new thought
                 
                 result = self.tools[action](action_input)
-                self.action_history.append((action, action_input, result))
+                #self.action_history.append((action, action_input, result))
                 self.context_window.append({"role": "system", "content": f"Action: {action}({action_input})\nResult: {result}"})
                 
                 print(Fore.BLUE + f"\nExecuting action: {action}({action_input})")
@@ -145,8 +145,12 @@ Observation: France is a country. The capital is Paris.
 
 You then output:
 
-Answer: The capital of France is Paris
-            """
+Answer: The capital of France is Paris.
+
+In case needed, here you have context about the user:
+- His name is Valentin
+- He lives in Mar del Plata, Argentina
+"""
             
     def save_interaction_log(self, query: str, response: str):
         log_data = {
