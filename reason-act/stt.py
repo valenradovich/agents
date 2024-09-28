@@ -5,7 +5,6 @@ import time
 from pynput import mouse
 import wave
 from datetime import datetime
-import threading
 import queue
 import os
 
@@ -30,36 +29,35 @@ def initialize_audio():
     return p, stream
 
 def audio_callback(in_data, frame_count, time_info, status):
+    global is_listening
     if is_listening:
+        # print("Audio callback called, is_listening:", is_listening)  # Debug print
         audio_queue.put(in_data)
     return (None, pyaudio.paContinue)
 
 def process_audio(model):
+    global is_listening
+    # print("Processing audio, is_listening:", is_listening)  # Debug print
     buffer = []
     while not audio_queue.empty():
         buffer.extend(np.frombuffer(audio_queue.get(), dtype=np.float32))
     
     if buffer:
+        # print(f"Buffer size: {len(buffer)}")  # Debug print
         audio_data = np.array(buffer)
-        # save_audio(audio_data)
+        #save_audio(audio_data)
         
         if np.max(np.abs(audio_data)) < 0.01:
             print("Warning: Very low audio levels detected. Check your microphone.")
+            return ""
         else:
             segments, info = model.transcribe(audio_data, beam_size=5)
-            for segment in segments:
-                print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
-
-def on_click(x, y, button, pressed):
-    global is_listening
-    if button == mouse.Button.button9:
-        is_listening = pressed
-        if pressed:
-            print("Listening...")
-            audio_queue.queue.clear()
-        else:
-            print("Stopped listening.")
-            process_audio(model)
+            full_text = " ".join(segment.text for segment in segments)
+            return full_text
+    else:
+        print("No audio data in buffer")  # Debug print
+    
+    return ""
 
 def save_audio(audio_data, sample_rate=16000):
     if not os.path.exists("saved_audio"):
@@ -71,30 +69,10 @@ def save_audio(audio_data, sample_rate=16000):
         wf.setsampwidth(2)
         wf.setframerate(sample_rate)
         wf.writeframes((audio_data * 32767).astype(np.int16).tobytes())
-    print(f"Audio saved as {filename}")
+    # print(f"Audio saved as {filename}")
 
-def main():
-    global stop_thread, model
-    
-    model = initialize_whisper()
-    p, stream = initialize_audio()
-    
-    print("Ready. Press and hold the designated mouse button to start listening.")
-    
-    listener = mouse.Listener(on_click=on_click)
-    listener.start()
-
-    try:
-        while not stop_thread:
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        print("Stopping...")
-        stop_thread = True
-    finally:
-        listener.stop()
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
-
-if __name__ == "__main__":
-    main()
+# Add a function to toggle listening state
+def toggle_listening(state):
+    global is_listening
+    is_listening = state
+    #print(f"Listening state toggled to: {is_listening}")  # Debug print
