@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import re
 from typing import List, Dict, Any, Tuple, Optional, Deque
@@ -95,7 +96,7 @@ class ReActAgent:
                 {"role": "system", "content": self.get_system_prompt()},
                 {"role": "user", "content": context}
             ],
-            max_tokens=150,
+            max_tokens=200,
             n=1,
             stop=None,
             temperature=0.7,
@@ -115,12 +116,16 @@ class ReActAgent:
             # Remove quotes and split inputs if there are multiple
             inputs = [inp.strip().strip("'\"") for inp in action_input.split(',')]
             
-            if len(inputs) == 1:
-                return action, inputs[0]
-            elif len(inputs) == 2:
-                return action, ', '.join(inputs)  # Join back with comma for two-argument actions
+            #if len(inputs) == 1:
+                #return action, inputs[0]
+            #elif len(inputs) == 2:
+                #return action, ', '.join(inputs)  # Join back with comma for two-argument actions
+            #else:
+                #return None, f"Invalid number of arguments for action '{action}'. Expected 1 or 2, got {len(inputs)}."
+            if len(inputs) in [1, 2, 3]:
+                return action, ', '.join(inputs)  # Join back with comma for up to three-argument actions
             else:
-                return None, f"Invalid number of arguments for action '{action}'. Expected 1 or 2, got {len(inputs)}."
+                return None, f"Invalid number of arguments for action '{action}'. Expected 1, 2, or 3, got {len(inputs)}."
         else:
             return None, "No valid action found in the thought."
 
@@ -158,6 +163,7 @@ Answer: The capital of France is Paris.
 In case needed, here you have context about the user:
 - His name is Valentin
 - He lives in Mar del Plata, Argentina
+- Today's date is {datetime.now().strftime("%Y-%m-%d")} - {datetime.now().strftime("%H:%M:%S")}
 """
             
     def save_interaction_log(self, query: str, response: str):

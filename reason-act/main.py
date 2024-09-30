@@ -1,6 +1,6 @@
 import time
 from agent import ReActAgent
-from tools import InternetSearch, GetWeather, PlayMusic
+from tools import InternetSearch, GetWeather, PlayMusic, GoogleCalendarCreateEvent, GoogleCalendarUpdateEvent, GoogleCalendarDeleteEvent, GoogleCalendarFindEventInRange
 import json
 import os
 from colorama import init, Fore, Style
@@ -16,7 +16,8 @@ is_listening = False
 audio_queue = queue.Queue()
 
 def main():
-    tools = [InternetSearch(), GetWeather(), PlayMusic()]
+    tools = [InternetSearch(), GetWeather(), PlayMusic(), GoogleCalendarCreateEvent(), 
+             GoogleCalendarUpdateEvent(), GoogleCalendarDeleteEvent(), GoogleCalendarFindEventInRange()]
     
     agent = ReActAgent(tools)
     

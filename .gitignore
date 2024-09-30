@@ -133,3 +133,5 @@ logs/
 reason-act/logs/
 redtriever/logs/
 saved_audio/
+token.json
+credentials.json
