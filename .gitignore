@@ -135,3 +135,6 @@ redtriever/logs/
 saved_audio/
 token.json
 credentials.json
+token_gmail.json
+notebooks/*
+reason-act/email_drafts/*

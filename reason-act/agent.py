@@ -9,12 +9,13 @@ from config import OPENAI_API_KEY
 import time
 import json
 from colorama import init, Fore, Style
+from email_manager import EmailManager
 
 # Initialize colorama
 init(autoreset=True)
 
 class ReActAgent:
-    def __init__(self, tools: List[Tool], context_window: int = 5):
+    def __init__(self, tools: List[Tool], context_window: int = 5, email_manager: EmailManager = None):
         self.tools = {tool.name: tool for tool in tools}
         self.tool_info = get_all_tool_info(tools)
         self.thought_history = []
@@ -29,6 +30,7 @@ class ReActAgent:
         }
         self.log_dir = "reason-act/logs"
         os.makedirs(self.log_dir, exist_ok=True)
+        self.email_manager = email_manager or EmailManager()
 
     def run(self, query: str) -> str:
         start_time = time.time()
@@ -96,7 +98,7 @@ class ReActAgent:
                 {"role": "system", "content": self.get_system_prompt()},
                 {"role": "user", "content": context}
             ],
-            max_tokens=200,
+            max_tokens=300,
             n=1,
             stop=None,
             temperature=0.7,
@@ -104,7 +106,7 @@ class ReActAgent:
         return response.choices[0].message.content.strip()
 
     def _parse_action(self, thought: str) -> Tuple[Optional[str], Optional[str]]:
-        action_match = re.search(r"Action:\s*(\w+)\((.*?)\)", thought)
+        action_match = re.search(r"Action:\s*(\w+)\((.*)\)", thought, re.DOTALL)
         
         if action_match:
             action = action_match.group(1)
@@ -113,21 +115,67 @@ class ReActAgent:
             if action not in self.tools:
                 return None, f"Invalid action '{action}'. Available actions are: {', '.join(self.tools.keys())}"
             
-            # Remove quotes and split inputs if there are multiple
-            inputs = [inp.strip().strip("'\"") for inp in action_input.split(',')]
+            # Parse arguments, respecting JSON structure
+            args = self._parse_arguments(action_input)
             
-            #if len(inputs) == 1:
-                #return action, inputs[0]
-            #elif len(inputs) == 2:
-                #return action, ', '.join(inputs)  # Join back with comma for two-argument actions
-            #else:
-                #return None, f"Invalid number of arguments for action '{action}'. Expected 1 or 2, got {len(inputs)}."
-            if len(inputs) in [1, 2, 3]:
-                return action, ', '.join(inputs)  # Join back with comma for up to three-argument actions
+            if 1 <= len(args) <= 4:
+                # Remove named argument prefixes if present
+                cleaned_args = [arg.split('=')[-1] for arg in args]
+                return action, ', '.join(cleaned_args)
             else:
-                return None, f"Invalid number of arguments for action '{action}'. Expected 1, 2, or 3, got {len(inputs)}."
+                return None, f"Invalid number of arguments for action '{action}'. Expected 1, 2, 3 or 4, got {len(args)}."
         else:
             return None, "No valid action found in the thought."
+
+    def _parse_arguments(self, action_input: str) -> List[str]:
+        args = []
+        current_arg = ""
+        brace_count = 0
+        in_quotes = False
+        quote_char = None
+
+        for char in action_input:
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+            elif char in ('"', "'"):
+                if not in_quotes:
+                    in_quotes = True
+                    quote_char = char
+                elif char == quote_char:
+                    in_quotes = False
+                    quote_char = None
+
+            if char == ',' and brace_count == 0 and not in_quotes:
+                args.append(self._clean_argument(current_arg.strip()))
+                current_arg = ""
+            else:
+                current_arg += char
+
+        if current_arg:
+            args.append(self._clean_argument(current_arg.strip()))
+
+        return args
+
+    def _clean_argument(self, arg: str) -> str:
+        # Remove surrounding quotes if present
+        if (arg.startswith("'") and arg.endswith("'")) or (arg.startswith('"') and arg.endswith('"')):
+            arg = arg[1:-1]
+        
+        # If it's a JSON object, parse and re-stringify to remove any internal quotes
+        if arg.startswith('{') and arg.endswith('}'):
+            try:
+                parsed_json = json.loads(arg)
+                return json.dumps(parsed_json)
+            except json.JSONDecodeError:
+                pass  # If it's not valid JSON, return as is
+        
+        # Remove named argument prefix if present
+        if '=' in arg:
+            arg = arg.split('=', 1)[1]
+        
+        return arg
 
     def _extract_final_answer(self, thought: str) -> str:
         return thought.split("Final Answer:")[-1].strip()
@@ -158,11 +206,11 @@ Observation: France is a country. The capital is Paris.
 
 You then output:
 
-Answer: The capital of France is Paris.
+Final Answer: The capital of France is Paris.
 
 In case needed, here you have context about the user:
 - His name is Valentin
-- He lives in Mar del Plata, Argentina
+- He lives in Mar del Plata, Buenos Aires,Argentina
 - Today's date is {datetime.now().strftime("%Y-%m-%d")} - {datetime.now().strftime("%H:%M:%S")}
 """
             
