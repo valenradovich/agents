@@ -2,7 +2,7 @@ import time
 from agent import ReActAgent
 from tools import InternetSearch, GetWeather, PlayMusic, GoogleCalendarCreateEvent, GoogleCalendarUpdateEvent, \
                   GoogleCalendarDeleteEvent, GoogleCalendarFindEventInRange, ReadEmails, WriteEmail, SendEmail, \
-                 DeleteEmail, GetDrafts
+                  DeleteEmail, GetDrafts, GetContactEmail
 import json
 import os
 from colorama import init, Fore, Style
@@ -32,7 +32,8 @@ def main():
         WriteEmail(email_manager),
         SendEmail(email_manager),
         DeleteEmail(email_manager),
-        GetDrafts(email_manager)
+        GetDrafts(email_manager),
+        GetContactEmail()  
     ]
     
     agent = ReActAgent(tools, email_manager=email_manager)

@@ -24,7 +24,6 @@ class EmailManager:
         return os.path.join(self.drafts_folder, f'draft_{draft_id}.json')
 
     def write_email(self, to: str, subject: str, body: str, draft_id: str | None = None):
-        print(Fore.RED + "DEBUGGING; write_email called with to:", to, "subject:", subject, "body:", body, "draft_id:", draft_id)
         if draft_id is None:
             draft_id = f"draft_{self.draft_counter}"
             self.draft_counter += 1

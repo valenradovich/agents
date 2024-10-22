@@ -73,7 +73,7 @@ class ReActAgent:
                 action, action_input = self._parse_action(thought)
                 if action is None:
                     self.context_window.append({"role": "system", "content": action_input})
-                    print(Fore.RED + f"\nInvalid action: {action_input}")
+                    #print(Fore.RED + f"\nInvalid action: {action_input}")
                     continue  # Invalid action, generate a new thought
                 
                 result = self.tools[action](action_input)
@@ -98,7 +98,7 @@ class ReActAgent:
                 {"role": "system", "content": self.get_system_prompt()},
                 {"role": "user", "content": context}
             ],
-            max_tokens=300,
+            max_tokens=600,
             n=1,
             stop=None,
             temperature=0.7,
@@ -115,15 +115,19 @@ class ReActAgent:
             if action not in self.tools:
                 return None, f"Invalid action '{action}'. Available actions are: {', '.join(self.tools.keys())}"
             
-            # Parse arguments, respecting JSON structure
-            args = self._parse_arguments(action_input)
-            
-            if 1 <= len(args) <= 4:
-                # Remove named argument prefixes if present
-                cleaned_args = [arg.split('=')[-1] for arg in args]
-                return action, ', '.join(cleaned_args)
+            if action == "write_email":
+                try:
+                    email_data = json.loads(action_input)
+                    return action, json.dumps(email_data)
+                except json.JSONDecodeError:
+                    return None, "Invalid JSON input for write_email action."
             else:
-                return None, f"Invalid number of arguments for action '{action}'. Expected 1, 2, 3 or 4, got {len(args)}."
+                args = self._parse_arguments(action_input)
+                if 1 <= len(args) <= 4:
+                    cleaned_args = [arg.split('=')[-1] for arg in args]
+                    return action, ', '.join(cleaned_args)
+                else:
+                    return None, f"Invalid number of arguments for action '{action}'. Expected 1, 2, 3 or 4, got {len(args)}."
         else:
             return None, "No valid action found in the thought."
 

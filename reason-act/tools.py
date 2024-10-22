@@ -21,6 +21,8 @@ from utils import AutoRefreshingCredentials
 from email_manager import EmailManager
 from contacts import get_contact_email
 import json
+import webbrowser
+import threading
 
 init(autoreset=True)
 
@@ -46,19 +48,61 @@ class InternetSearch(Tool):
     def __init__(self):
         super().__init__(
             name="internet_search",
-            args=["query"],
-            description="Searches the internet for information. Input should be a search query."
+            args=["query", "search_depth", "include_images", "include_image_descriptions"],
+            description="Searches the internet for information. Input should be a query string, optionally followed by search depth ('basic' or 'advanced', default is 'basic'), include_images: used to specify if images should be included in the search results (True/False), and include_image_descriptions: used to specify if image descriptions should be included in the search results (True/False)."
         )
 
-    def __call__(self, query: str) -> str:
+    def __call__(self, input: str) -> str:
         try:
-            response = requests.post(
-                "https://api.tavily.com/search",
-                json={"api_key": TAVILY_API_KEY, "query": query}
-            )
+            parts = input.split(',')
+            query = parts[0].strip()
+            search_depth = parts[1].strip().lower() if len(parts) > 1 else 'basic'
+            include_images = parts[2].strip().lower() == 'true' if len(parts) > 2 else False
+            include_image_descriptions = parts[3].strip().lower() == 'true' if len(parts) > 3 else False
+
+            if search_depth not in ['basic', 'advanced']:
+                search_depth = 'basic'
+
+            payload = {
+                "api_key": TAVILY_API_KEY,
+                "query": query,
+                "search_depth": search_depth,
+                "include_images": include_images,
+                "include_image_descriptions": include_image_descriptions
+            }
+
+            response = requests.post("https://api.tavily.com/search", json=payload)
             response.raise_for_status()
             results = response.json()
-            return f"Search results for '{query}': {results['results'][:3]}"
+
+            output = f"Search results for '{query}':\n\n"
+            for result in results['results']:
+                output += f"Title: {result['title']}\n"
+                output += f"URL: {result['url']}\n"
+                output += f"Content: {result['content']}\n\n"
+
+            def open_images(image_urls):
+                for url in image_urls:
+                    webbrowser.open_new_tab(url)
+                    time.sleep(0.5)  
+
+            if include_images and 'images' in results:
+                print("Images found in the search results. Opening in browser...")
+                image_urls = []
+                for image in results['images']:
+                    if isinstance(image, dict):
+                        image_url = image['url']
+                        if include_image_descriptions:
+                            #print(f"Description: {image['description']}")
+                            pass
+                    else:
+                        image_url = image
+                    image_urls.append(image_url)
+                
+                max_images_to_open = 5 
+                threading.Thread(target=open_images, args=(image_urls[:max_images_to_open],)).start()
+                
+            return output
         except requests.RequestException as e:
             return f"Error performing internet search: {str(e)}"
 
@@ -228,11 +272,12 @@ class GoogleCalendarFindEventInRange(GoogleCalendarBase):
         super().__init__(
             name="find_event_in_range",
             args=["event_name", "start_date", "end_date"],
-            description="Find events within a date range in Google Calendar. Event name is a string (could be not specified and use empty with "" to general searches), start and end date should be in the format YYYY-MM-DD."
+            description="Find events within a date range in Google Calendar. Event name is a string (could be not specified and use empty with "" to general searches), start and end date must be in the format YYYY-MM-DD."
         )
 
     def __call__(self, input: str) -> str:
         event_name, start_date, end_date = input.split(',', 2)
+        print(Fore.WHITE + f"\nSearching for events in range: {event_name} from {start_date} to {end_date}")
         start_date = datetime.fromisoformat(start_date.strip())
         end_date = datetime.fromisoformat(end_date.strip())
         events_result = self.service.events().list(
@@ -316,27 +361,31 @@ class WriteEmail(Tool):
     def __init__(self, email_manager: EmailManager):
         super().__init__(
             name="write_email",
-            args=["to", "subject", "body", "draft_id"],
-            description="Write or update an email draft. Provide recipient, subject, body, and optionally a draft_id to update an existing draft. Format: \"to\", \"subject\", \"body\", \"draft_id\" (use \"None\" if no draft_id). Each argument must be enclosed in double quotes."
+            args=["email_data"],
+            description="Write or edit an email draft. Provide a JSON string containing 'to' (name or email), 'subject', 'body', and optionally 'draft_id'. Use null for draft_id if creating a new draft."
         )
         self.email_manager = email_manager
 
     def __call__(self, input: str) -> str:
         try:
-            print("Received input:", input)
-            parts = input.split(',')
-            print("parts: ", parts)
-            if len(parts) != 4:
-                return "Invalid input. Please provide to, subject, body, and draft_id (use \"None\" if no draft_id) enclosed in double quotes and separated by commas."
+            email_data = json.loads(input)
+            to = email_data['to']
+            subject = email_data['subject']
+            body = email_data['body']
+            draft_id = email_data.get('draft_id')
             
-            #to, subject, body, draft_id = parts
-            to, subject, body, draft_id = [part.strip().strip('"') for part in parts]
-            print(Fore.WHITE + f"\nWriting email to: {to}, subject: {subject}, body: {body}, draft_id: {draft_id}")
-            draft_id = None if draft_id.lower() == 'none' else draft_id
+            # The agent should use the get_contact_email tool before calling this tool
+            # If it's not an email address, we'll use a default one
+            if '@' not in to:
+                to = f"{to}@example.com"
             
             draft_id = self.email_manager.write_email(to, subject, body, draft_id)
             print(Fore.WHITE + f"\nEmail draft saved with ID: {draft_id}")
             return f"Email draft saved with ID: {draft_id}"
+        except json.JSONDecodeError:
+            return "Invalid JSON input. Please provide a valid JSON string."
+        except KeyError as e:
+            return f"Missing required field in JSON input: {str(e)}"
         except Exception as e:
             return f"An error occurred while writing the email: {str(e)}"
 
@@ -402,24 +451,60 @@ class GetDrafts(Tool):
     def __init__(self, email_manager: EmailManager):
         super().__init__(
             name="get_drafts",
-            args=["amount"],
-            description="List all email drafts. Amount is the number of drafts to retrieve."
+            args=["action", "parameter"],
+            description="List email drafts or get full content of a specific draft. Action should be 'list' or 'full'. For 'list', parameter is the number of drafts to retrieve. For 'full', parameter is the draft ID."
         )
         self.email_manager = email_manager
 
     def __call__(self, input: str) -> str:
         try:
-            amount = int(input.strip())
-            drafts = self.email_manager.list_drafts(amount)
-            
-            if drafts == []:
-                return "No email drafts found."
-            
-            draft_list = "\n".join([f"ID: {draft['id']}, To: {draft['to']}, Subject: {draft['subject']}" for draft in drafts])
-            return f"Email drafts:\n{draft_list}"
-        except Exception as e:
-            return f"An error occurred while listing the email drafts: {str(e)}"
+            action, parameter = input.split(',')
+            action = action.strip().lower()
+            parameter = parameter.strip()
 
+            if action == 'list':
+                return self._list_drafts(int(parameter))
+            elif action == 'full':
+                return self._get_full_draft(parameter)
+            else:
+                return "Invalid action. Use 'list' or 'full'."
+        except ValueError:
+            return "Invalid input. Please provide action and parameter separated by a comma."
+        except Exception as e:
+            return f"An error occurred: {str(e)}"
+
+    def _list_drafts(self, amount: int) -> str:
+        drafts = self.email_manager.list_drafts(amount)
+        
+        if not drafts:
+            return "No email drafts found."
+        
+        draft_list = "\n".join([f"ID: {draft['id']}, To: {draft['to']}, Subject: {draft['subject']}" for draft in drafts])
+        return f"Email drafts:\n{draft_list}"
+
+    def _get_full_draft(self, draft_id: str) -> str:
+        draft = self.email_manager.get_draft(draft_id)
+        
+        if not draft:
+            return f"No draft found with ID: {draft_id}"
+        
+        return f"Draft ID: {draft_id}\nTo: {draft['to']}\nSubject: {draft['subject']}\nBody:\n{draft['body']}"
+
+class GetContactEmail(Tool):
+    def __init__(self):
+        super().__init__(
+            name="get_contact_email",
+            args=["contact_name"],
+            description="Get the email address for a given contact name. If not found, returns None."
+        )
+
+    def __call__(self, contact_name: str) -> str:
+        email = get_contact_email(contact_name.strip())
+        if email:
+            return f"Email for {contact_name}: {email}"
+        else:
+            return f"No email found for contact: {contact_name}"
 
 def get_all_tool_info(tools: list[Tool]) -> list[Dict[str, str]]:
     return [tool.get_info() for tool in tools]
+
