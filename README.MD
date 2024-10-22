@@ -1,5 +1,5 @@
 # agents
-here you can find some agents that i've coded for different tasks, all of them, almost from scratch.
+here you can find some simple agents that i've coded for different tasks, all of them, almost from scratch.
 
 ## reddtriever
 i'm always querying google or perplexity using 'site:reddit.com' to find relevant information about some topic, question, research, etc.
